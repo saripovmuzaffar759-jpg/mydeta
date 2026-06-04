@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя База Данных</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; }
+        
+        .header { background: #1a73e8; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; }
+        .header .count { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 14px; }
+        
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        
+        .toolbar { background: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .toolbar input { flex: 1; min-width: 200px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; }
+        .btn-add { background: #1a73e8; color: white; }
+        .btn-add:hover { background: #1557b0; }
+        .btn-edit { background: #ffa000; color: white; }
+        .btn-edit:hover { background: #e69000; }
+        .btn-delete { background: #e53935; color: white; }
+        .btn-delete:hover { background: #c62828; }
+        .btn-save { background: #43a047; color: white; }
+        .btn-cancel { background: #757575; color: white; }
+        
+        table { width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-collapse: collapse; }
+        th { background: #f8f9fa; padding: 12px 15px; text-align: left; font-weight: 600; font-size: 13px; color: #5f6368; border-bottom: 2px solid #e0e0e0; }
+        td { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        tr:hover { background: #f8f9ff; }
+        
+        .status { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .status-active { background: #e8f5e9; color: #2e7d32; }
+        .status-inactive { background: #fce4ec; color: #c62828; }
+        .status-draft { background: #fff3e0; color: #e65100; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 500px; max-width: 90%; }
+        .modal-content h2 { margin-bottom: 15px; }
+        .modal-content input, .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .modal-content textarea { resize: vertical; min-height: 80px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
+        
+        .empty { text-align: center; padding: 40px; color: #999; }
+        .empty span { font-size: 50px; display: block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗄️ Моя База Данных</h1>
+        <span class="count" id="recordCount">0 записей</span>
+    </div>
+    
+    <div class="container">
+        <div class="toolbar">
+            <input type="text" id="search" placeholder="🔍 Поиск по названию или описанию..." oninput="loadRecords()">
+            <select id="filterStatus" onchange="loadRecords()">
+                <option value="">Все статусы</option>
+                <option value="active">Активные</option>
+                <option value="inactive">Неактивные</option>
+                <option value="draft">Черновик</option>
+            </select>
+            <button class="btn btn-add" onclick="openAddModal()">+ Добавить запись</button>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Описание</th>
+                    <th>Статус</th>
+                    <th>Дата создания</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="6" class="empty"><span>📭</span>Нет записей</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Модальное окно -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Добавить запись</h2>
+            <input type="hidden" id="editId">
+            <input type="text" id="title" placeholder="Название">
+            <textarea id="description" placeholder="Описание"></textarea>
+            <select id="status">
+                <option value="active">Активный</option>
+                <option value="inactive">Неактивный</option>
+                <option value="draft">Черновик</option>
+            </select>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-save" onclick="saveRecord()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadRecords() {
+            const search = document.getElementById('search').value;
+            const status = document.getElementById('filterStatus').value;
+            
+            let url = '/api/records?';
+            if (search) url += 'search=' + encodeURIComponent(search) + '&';
+            if (status) url += 'status=' + status;
+            
+            const res = await fetch(url);
+            const records = await res.json();
+            
+            document.getElementById('recordCount').textContent = records.length + ' записей';
+            
+            const tbody = document.getElementById('tableBody');
+            
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty"><span>📭</span>Нет записей</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = records.map(r => `
+                <tr>
+                    <td>#${r.id}</td>
+                    <td><strong>${escapeHtml(r.title)}</strong></td>
+                    <td>${escapeHtml(r.description || '—')}</td>
+                    <td><span class="status status-${r.status}">${getStatusName(r.status)}</span></td>
+                    <td>${formatDate(r.created_at)}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="openEditModal(${r.id}, '${escapeHtml(r.title)}', '${escapeHtml(r.description || '')}', '${r.status}')">✏️</button>
+                        <button class="btn btn-delete" onclick="deleteRecord(${r.id})">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Добавить запись';
+            document.getElementById('editId').value = '';
+            document.getElementById('title').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('status').value = 'active';
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function openEditModal(id, title, description, status) {
+            document.getElementById('modalTitle').textContent = 'Редактировать запись';
+            document.getElementById('editId').value = id;
+            document.getElementById('title').value = title;
+            document.getElementById('description').value = description;
+            document.getElementById('status').value = status;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        async function saveRecord() {
+            const id = document.getElementById('editId').value;
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const status = document.getElementById('status').value;
+            
+            if (!title) return alert('Введите название');
+            
+            if (id) {
+                await fetch('/api/records/' + id, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title, description, status})
+                });
+            } else {
+                await fetch('/api/records', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title, description, status})
+                });
+            }
+            
+            closeModal();
+            loadRecords();
+        }
+
+        async function deleteRecord(id) {
+            if (confirm('Удалить запись #' + id + '?')) {
+                await fetch('/api/records/' + id, {method: 'DELETE'});
+                loadRecords();
+            }
+        }
+
+        function getStatusName(status) {
+            const names = {active: 'Активный', inactive: 'Неактивный', draft: 'Черновик'};
+            return names[status] || status;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        loadRecords();
+    </script>
+</body>
+</html>

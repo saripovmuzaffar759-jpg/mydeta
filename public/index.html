@@ -1,264 +1,219 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Firebase Clone</title>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:Arial;display:flex;height:100vh;background:#0f172a;color:#e2e8f0}
-        .sidebar{width:260px;background:#1e293b;padding:20px;overflow-y:auto}
-        .sidebar h2{color:#3b82f6;margin-bottom:15px;font-size:16px}
-        #projectsList{margin-bottom:15px}
-        .pitem{padding:10px 12px;margin:3px 0;border-radius:6px;cursor:pointer;font-size:14px;display:flex;justify-content:space-between;align-items:center}
-        .pitem:hover{background:#334155}
-        .pitem.active{background:#3b82f6}
-        .pitem span{cursor:pointer}
-        .sidebar input{width:100%;padding:10px;border:none;border-radius:6px;background:#0f172a;color:white;margin-bottom:8px}
-        .sidebar button{width:100%;padding:10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold}
-        .sidebar button:hover{background:#2563eb}
-        .main{flex:1;padding:30px;overflow-y:auto}
-        .main h2{margin-bottom:20px}
-        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:15px}
-        .card{background:#1e293b;padding:18px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border:1px solid #334155}
-        .card:hover{border-color:#3b82f6}
-        .card button{background:#ef4444;color:white;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px}
-        table{width:100%;border-collapse:collapse;background:#1e293b;border-radius:8px;overflow:hidden}
-        th{background:#3b82f6;padding:10px 14px;text-align:left;font-size:12px}
-        td{padding:8px 14px;border-bottom:1px solid #334155;font-size:13px}
-        .btn{padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px;color:white}
-        .btn-add{background:#22c55e;margin-bottom:15px;padding:8px 16px;font-size:13px}
-        .btn-edit{background:#f59e0b}
-        .btn-del{background:#ef4444}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:999}
-        .modal.on{display:flex}
-        .modal-box{background:#1e293b;padding:25px;border-radius:12px;width:450px;max-height:80vh;overflow-y:auto}
-        .modal-box h3{margin-bottom:15px;color:#3b82f6}
-        .modal-box input{width:100%;padding:10px;margin-bottom:8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:white}
-        .modal-box button{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;margin-right:8px}
-        .row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
-        .row input{flex:1;margin-bottom:0}
-        .row button{background:#ef4444;color:white;padding:6px 10px;font-size:12px}
-        .empty{text-align:center;padding:60px;color:#64748b}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firebase Clone</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa;color:#202124}
+.header{background:#1a73e8;color:white;padding:16px 24px;font-size:18px;font-weight:500}
+.layout{display:flex;min-height:calc(100vh - 56px)}
+.sidebar{width:280px;background:white;border-right:1px solid #e0e0e0;padding:16px}
+.sidebar h3{font-size:14px;color:#5f6368;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.project{padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.project:hover{background:#e8f0fe}
+.project.active{background:#e8f0fe;color:#1a73e8;font-weight:500}
+.project .del{visibility:hidden;color:#ea4335;cursor:pointer;padding:2px 6px;border-radius:4px}
+.project:hover .del{visibility:visible}
+.project .del:hover{background:#fce8e6}
+.sidebar input{width:100%;padding:8px 10px;border:1px solid #dadce0;border-radius:6px;font-size:13px;margin-top:12px;outline:none}
+.sidebar input:focus{border-color:#1a73e8}
+.sidebar button{width:100%;padding:8px;margin-top:8px;background:#1a73e8;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500}
+.sidebar button:hover{background:#1557b0}
+.main{flex:1;padding:24px 32px;overflow-y:auto}
+.main h2{font-size:22px;margin-bottom:20px;color:#202124}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.card{background:white;border:1px solid #e0e0e0;border-radius:12px;padding:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.card:hover{border-color:#1a73e8;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.card .icon{font-size:28px}
+.card .name{font-size:14px;font-weight:500;flex:1}
+.card .del{color:#ea4335;cursor:pointer;padding:6px 10px;border-radius:6px;border:none;background:none;font-size:14px}
+.card .del:hover{background:#fce8e6}
+.card.add{border:2px dashed #dadce0;justify-content:center;color:#5f6368}
+.card.add:hover{border-color:#1a73e8;color:#1a73e8}
+table{width:100%;background:white;border-radius:12px;overflow:hidden;border:1px solid #e0e0e0;border-collapse:collapse}
+th{background:#f8f9fa;padding:12px 16px;text-align:left;font-size:12px;color:#5f6368;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e0e0e0}
+td{padding:10px 16px;font-size:13px;border-bottom:1px solid #f1f3f4}
+tr:last-child td{border-bottom:none}
+.btn{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;margin-right:4px}
+.btn-primary{background:#1a73e8;color:white}
+.btn-primary:hover{background:#1557b0}
+.btn-danger{background:none;color:#ea4335;border:1px solid #ea4335}
+.btn-danger:hover{background:#ea4335;color:white}
+.btn-green{background:#34a853;color:white;padding:8px 16px;margin-bottom:16px}
+.btn-green:hover{background:#2d8f47}
+.empty{text-align:center;padding:60px;color:#9aa0a6}
+pre{background:#f8f9fa;padding:8px 12px;border-radius:6px;font-size:12px;max-width:300px;overflow-x:auto;margin:0}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:white;border-radius:16px;padding:24px;width:460px;max-height:80vh;overflow-y:auto}
+.modal-box h3{margin-bottom:16px;font-size:18px}
+.modal-box input{width:100%;padding:10px;border:1px solid #dadce0;border-radius:8px;margin-bottom:8px;font-size:14px;outline:none}
+.modal-box input:focus{border-color:#1a73e8}
+.field-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.field-row input{flex:1;margin-bottom:0}
+.field-row button{background:#ea4335;color:white;border:none;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;flex-shrink:0}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.modal-actions button{padding:8px 20px;border-radius:8px;font-size:14px;cursor:pointer;border:none}
+</style>
 </head>
 <body>
-    <div class="sidebar">
-        <h2>🔥 Мои проекты</h2>
-        <div id="projectsList"></div>
-        <input type="text" id="projectName" placeholder="Название проекта">
-        <button onclick="createProject()">+ Создать проект</button>
-    </div>
-    
-    <div class="main" id="mainContent">
-        <div class="empty">← Выбери проект слева</div>
-    </div>
-    
-    <div class="modal" id="modal">
-        <div class="modal-box" id="modalContent"></div>
-    </div>
+<div class="header">🔥 Firebase Clone</div>
+<div class="layout">
+  <div class="sidebar">
+    <h3>Проекты</h3>
+    <div id="projectList"></div>
+    <input type="text" id="projectInput" placeholder="Название проекта">
+    <button onclick="createProject()">Создать проект</button>
+  </div>
+  <div class="main" id="mainContent">
+    <div class="empty">👈 Выбери проект</div>
+  </div>
+</div>
+<div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
 
-    <script>
-        const API = '/api';
-        let currentProject = null;
-        let currentCollection = null;
+<script>
+const API = '/api';
+let proj = null, coll = null;
 
-        async function loadProjects() {
-            const res = await fetch(API + '/projects');
-            const projects = await res.json();
-            document.getElementById('projectsList').innerHTML = projects.map(p => 
-                `<div class="pitem ${currentProject && currentProject.id === p.id ? 'active' : ''}" onclick="openProject(${p.id}, '${p.name}')">
-                    📁 ${p.name}
-                    <span onclick="event.stopPropagation();deleteProject(${p.id})">✕</span>
-                </div>`
-            ).join('');
-        }
+async function loadProjects() {
+  const projects = await fetch(API + '/projects').then(r => r.json());
+  document.getElementById('projectList').innerHTML = projects.map(p => 
+    `<div class="project${proj&&proj.id===p.id?' active':''}" onclick="openProject(${p.id},'${p.name}')">
+      📁 ${p.name}
+      <span class="del" onclick="event.stopPropagation();delProject(${p.id})">🗑</span>
+    </div>`
+  ).join('');
+}
 
-        async function createProject() {
-            const name = document.getElementById('projectName').value.trim();
-            if (!name) { alert('Введи название!'); return; }
-            
-            const res = await fetch(API + '/projects', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: name})
-            });
-            
-            if (res.ok) {
-                document.getElementById('projectName').value = '';
-                loadProjects();
-            } else {
-                alert('Ошибка!');
-            }
-        }
+async function createProject() {
+  const name = document.getElementById('projectInput').value.trim();
+  if(!name) return alert('Введи название');
+  await fetch(API + '/projects', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})
+  });
+  document.getElementById('projectInput').value = '';
+  loadProjects();
+}
 
-        async function deleteProject(id) {
-            if (!confirm('Удалить проект?')) return;
-            await fetch(API + '/projects/' + id, {method: 'DELETE'});
-            if (currentProject && currentProject.id === id) {
-                currentProject = null;
-                document.getElementById('mainContent').innerHTML = '<div class="empty">← Выбери проект</div>';
-            }
-            loadProjects();
-        }
+async function delProject(id) {
+  if(!confirm('Удалить?')) return;
+  await fetch(API + '/projects/' + id, {method:'DELETE'});
+  if(proj&&proj.id===id) { proj=null; document.getElementById('mainContent').innerHTML='<div class="empty">👈 Выбери проект</div>'; }
+  loadProjects();
+}
 
-        async function openProject(id, name) {
-            currentProject = {id, name};
-            currentCollection = null;
-            loadProjects();
-            
-            const res = await fetch(API + '/projects/' + id + '/collections');
-            const collections = await res.json();
-            
-            document.getElementById('mainContent').innerHTML = `
-                <h2>📁 ${name} — Коллекции</h2>
-                <div class="grid">
-                    ${collections.map(c => `
-                        <div class="card" onclick="openCollection(${c.id}, '${c.name}')">
-                            📄 ${c.name}
-                            <button onclick="event.stopPropagation();deleteCollection(${c.id})">Удалить</button>
-                        </div>
-                    `).join('')}
-                    <div class="card" onclick="showAddCollection()" style="border:2px dashed #334155;justify-content:center;">
-                        + Новая коллекция
-                    </div>
-                </div>
-            `;
-        }
+async function openProject(id, name) {
+  proj={id,name}; coll=null; loadProjects();
+  const cols = await fetch(API + '/collections/' + id).then(r => r.json());
+  document.getElementById('mainContent').innerHTML = `
+    <h2>📁 ${name}</h2>
+    <div class="cards">
+      ${cols.map(c => `
+        <div class="card" onclick="openCollection(${c.id},'${c.name}')">
+          <span class="icon">📄</span><span class="name">${c.name}</span>
+          <button class="del" onclick="event.stopPropagation();delCollection(${c.id})">🗑</button>
+        </div>
+      `).join('')}
+      <div class="card add" onclick="showAddCol()">+ Новая коллекция</div>
+    </div>`;
+}
 
-        function showAddCollection() {
-            document.getElementById('modalContent').innerHTML = `
-                <h3>Новая коллекция</h3>
-                <input type="text" id="colName" placeholder="Название">
-                <br>
-                <button class="btn-add" onclick="createCollection()">Создать</button>
-                <button class="btn-del" onclick="closeModal()">Отмена</button>
-            `;
-            document.getElementById('modal').classList.add('on');
-        }
+function showAddCol() {
+  document.getElementById('modalBox').innerHTML = `
+    <h3>Новая коллекция</h3>
+    <input id="colName" placeholder="Название (users, posts...)">
+    <div class="modal-actions">
+      <button onclick="closeModal()" style="background:#f1f3f4">Отмена</button>
+      <button onclick="createCollection()" style="background:#1a73e8;color:white">Создать</button>
+    </div>`;
+  document.getElementById('modal').classList.add('show');
+}
 
-        async function createCollection() {
-            const name = document.getElementById('colName').value.trim();
-            if (!name) return;
-            await fetch(API + '/projects/' + currentProject.id + '/collections', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name})
-            });
-            closeModal();
-            openProject(currentProject.id, currentProject.name);
-        }
+async function createCollection() {
+  const name = document.getElementById('colName').value.trim();
+  if(!name) return;
+  await fetch(API + '/collections', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({projectId:proj.id, name})
+  });
+  closeModal(); openProject(proj.id, proj.name);
+}
 
-        async function deleteCollection(id) {
-            if (!confirm('Удалить?')) return;
-            await fetch(API + '/collections/' + id, {method: 'DELETE'});
-            openProject(currentProject.id, currentProject.name);
-        }
+async function delCollection(id) {
+  if(!confirm('Удалить?')) return;
+  await fetch(API + '/collections/' + id, {method:'DELETE'});
+  openProject(proj.id, proj.name);
+}
 
-        async function openCollection(id, name) {
-            currentCollection = {id, name};
-            const res = await fetch(API + '/collections/' + id + '/documents');
-            const docs = await res.json();
-            const keys = docs.length > 0 ? Object.keys(docs[0].data) : [];
-            
-            document.getElementById('mainContent').innerHTML = `
-                <h2>📄 ${name} <small>(${docs.length})</small></h2>
-                <button class="btn btn-add" onclick="showAddDoc()">+ Добавить</button>
-                <br><br>
-                ${docs.length === 0 ? '<div class="empty">Пусто</div>' : `
-                    <table>
-                        <thead><tr><th>ID</th>${keys.map(k => `<th>${k}</th>`).join('')}<th></th></tr></thead>
-                        <tbody>
-                            ${docs.map(d => `
-                                <tr>
-                                    <td>#${d.id}</td>
-                                    ${keys.map(k => `<td>${d.data[k] || ''}</td>`).join('')}
-                                    <td>
-                                        <button class="btn btn-edit" onclick="editDoc(${d.id}, '${encodeURIComponent(JSON.stringify(d.data))}')">✏️</button>
-                                        <button class="btn btn-del" onclick="deleteDoc(${d.id})">✕</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `}
-            `;
-        }
+async function openCollection(id, name) {
+  coll={id,name};
+  const docs = await fetch(API + '/documents/' + id).then(r => r.json());
+  const keys = docs.length ? Object.keys(docs[0].data) : [];
+  document.getElementById('mainContent').innerHTML = `
+    <h2>📄 ${name} <span style="font-size:14px;color:#5f6368">(${docs.length})</span></h2>
+    <button class="btn btn-green" onclick="showAddDoc()">+ Добавить документ</button>
+    ${docs.length===0 ? '<div class="empty">Пусто</div>' : `
+      <table><thead><tr><th>ID</th>${keys.map(k=>`<th>${k}</th>`).join('')}<th></th></tr></thead><tbody>
+        ${docs.map(d=>`<tr>
+          <td>#${d.id}</td>${keys.map(k=>`<td><pre>${d.data[k]||''}</pre></td>`).join('')}
+          <td>
+            <button class="btn btn-primary" onclick="editDoc(${d.id},'${encodeURIComponent(JSON.stringify(d.data))}')">✏️</button>
+            <button class="btn btn-danger" onclick="delDoc(${d.id})">🗑</button>
+          </td></tr>`).join('')}
+      </tbody></table>`}`;
+}
 
-        function showAddDoc() {
-            document.getElementById('modalContent').innerHTML = `
-                <h3>Новый документ</h3>
-                <div id="fields">
-                    <div class="row">
-                        <input type="text" placeholder="Ключ" class="k">
-                        <input type="text" placeholder="Значение" class="v">
-                    </div>
-                </div>
-                <button onclick="addField()" style="background:#334155;color:white;margin-bottom:10px;">+ Поле</button><br>
-                <button class="btn-add" onclick="saveDoc()">Сохранить</button>
-                <button class="btn-del" onclick="closeModal()">Отмена</button>
-            `;
-            document.getElementById('modal').classList.add('on');
-        }
+function showAddDoc() {
+  document.getElementById('modalBox').innerHTML = `
+    <h3>Новый документ</h3>
+    <div id="fields"><div class="field-row"><input placeholder="Ключ" class="k"><input placeholder="Значение" class="v"><button onclick="this.parentElement.remove()">✕</button></div></div>
+    <button onclick="addField()" style="background:#f1f3f4;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-bottom:12px">+ Поле</button>
+    <div class="modal-actions">
+      <button onclick="closeModal()" style="background:#f1f3f4">Отмена</button>
+      <button onclick="saveDoc()" style="background:#1a73e8;color:white">Сохранить</button>
+    </div>`;
+  document.getElementById('modal').classList.add('show');
+}
 
-        function addField() {
-            const d = document.createElement('div');
-            d.className = 'row';
-            d.innerHTML = '<input type="text" placeholder="Ключ" class="k"><input type="text" placeholder="Значение" class="v"><button onclick="this.parentElement.remove()">✕</button>';
-            document.getElementById('fields').appendChild(d);
-        }
+function addField() {
+  const d=document.createElement('div'); d.className='field-row';
+  d.innerHTML='<input placeholder="Ключ" class="k"><input placeholder="Значение" class="v"><button onclick="this.parentElement.remove()">✕</button>';
+  document.getElementById('fields').appendChild(d);
+}
 
-        async function saveDoc() {
-            const ks = document.querySelectorAll('.k');
-            const vs = document.querySelectorAll('.v');
-            const data = {};
-            ks.forEach((k, i) => { if (k.value) data[k.value] = vs[i].value; });
-            await fetch(API + '/collections/' + currentCollection.id + '/documents', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            closeModal();
-            openCollection(currentCollection.id, currentCollection.name);
-        }
+async function saveDoc() {
+  const ks=document.querySelectorAll('.k'), vs=document.querySelectorAll('.v'), data={};
+  ks.forEach((k,i)=>{if(k.value)data[k.value]=vs[i].value});
+  await fetch(API+'/documents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({collectionId:coll.id,data})});
+  closeModal(); openCollection(coll.id,coll.name);
+}
 
-        function editDoc(id, dataStr) {
-            const data = JSON.parse(decodeURIComponent(dataStr));
-            let h = '<h3>Редактировать #'+id+'</h3><div id="fields">';
-            for (const [k,v] of Object.entries(data)) {
-                h += `<div class="row"><input type="text" value="${k}" class="k"><input type="text" value="${v}" class="v"><button onclick="this.parentElement.remove()">✕</button></div>`;
-            }
-            h += '</div><button onclick="addField()" style="background:#334155;color:white;margin-bottom:10px;">+ Поле</button><br>';
-            h += `<button class="btn-add" onclick="updateDoc(${id})">Обновить</button>`;
-            h += '<button class="btn-del" onclick="closeModal()">Отмена</button>';
-            document.getElementById('modalContent').innerHTML = h;
-            document.getElementById('modal').classList.add('on');
-        }
+function editDoc(id, dataStr) {
+  const data=JSON.parse(decodeURIComponent(dataStr));
+  let h='<h3>Редактировать #'+id+'</h3><div id="fields">';
+  for(const[k,v]of Object.entries(data)) h+=`<div class="field-row"><input value="${k}" class="k"><input value="${v}" class="v"><button onclick="this.parentElement.remove()">✕</button></div>`;
+  h+='</div><button onclick="addField()" style="background:#f1f3f4;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-bottom:12px">+ Поле</button>';
+  h+=`<div class="modal-actions"><button onclick="closeModal()" style="background:#f1f3f4">Отмена</button><button onclick="updateDoc(${id})" style="background:#1a73e8;color:white">Обновить</button></div>`;
+  document.getElementById('modalBox').innerHTML=h; document.getElementById('modal').classList.add('show');
+}
 
-        async function updateDoc(id) {
-            const ks = document.querySelectorAll('.k');
-            const vs = document.querySelectorAll('.v');
-            const data = {};
-            ks.forEach((k, i) => { if (k.value) data[k.value] = vs[i].value; });
-            await fetch(API + '/documents/' + id, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            closeModal();
-            openCollection(currentCollection.id, currentCollection.name);
-        }
+async function updateDoc(id) {
+  const ks=document.querySelectorAll('.k'), vs=document.querySelectorAll('.v'), data={};
+  ks.forEach((k,i)=>{if(k.value)data[k.value]=vs[i].value});
+  await fetch(API+'/documents/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  closeModal(); openCollection(coll.id,coll.name);
+}
 
-        async function deleteDoc(id) {
-            if (!confirm('Удалить?')) return;
-            await fetch(API + '/documents/' + id, {method: 'DELETE'});
-            openCollection(currentCollection.id, currentCollection.name);
-        }
+async function delDoc(id) {
+  if(!confirm('Удалить?')) return;
+  await fetch(API+'/documents/'+id,{method:'DELETE'});
+  openCollection(coll.id,coll.name);
+}
 
-        function closeModal() {
-            document.getElementById('modal').classList.remove('on');
-        }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
-        loadProjects();
-    </script>
+loadProjects();
+</script>
 </body>
 </html>

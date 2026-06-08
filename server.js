@@ -1,119 +1,98 @@
 const express = require('express');
-const Database = require('better-sqlite3');
 const cors = require('cors');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-const db = new Database('data.db');
+const DATA_FILE = './data.json';
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    api_key TEXT UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-  
-  CREATE TABLE IF NOT EXISTS collections (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-  );
-  
-  CREATE TABLE IF NOT EXISTS documents (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    collection_id INTEGER NOT NULL,
-    data TEXT NOT NULL DEFAULT '{}',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
-  );
-`);
-
-function generateKey() {
-  return 'fb_' + Math.random().toString(36).substring(2,15) + Math.random().toString(36).substring(2,15);
+function loadData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    }
+  } catch(e) {}
+  return { projects: [], collections: [], documents: [], nextId: { project: 1, collection: 1, document: 1 } };
 }
 
-// ==================== ПРОЕКТЫ ====================
-app.get('/api/projects', (req, res) => {
-  const projects = db.prepare('SELECT id, name, api_key, created_at FROM projects').all();
-  res.json(projects);
-});
+function saveData() {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+let data = loadData();
+
+function genKey() {
+  return 'fb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+// Projects
+app.get('/api/projects', (_, res) => res.json(data.projects));
 
 app.post('/api/projects', (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ error: 'Name required' });
-  const api_key = generateKey();
-  const r = db.prepare('INSERT INTO projects (name, api_key) VALUES (?, ?)').run(name, api_key);
-  res.json({ id: r.lastInsertRowid, name, api_key });
+  const p = { id: data.nextId.project++, name: req.body.name, api_key: genKey(), created_at: new Date().toISOString() };
+  data.projects.push(p);
+  saveData();
+  res.json(p);
 });
 
 app.delete('/api/projects/:id', (req, res) => {
-  db.prepare('DELETE FROM projects WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
+  const pid = parseInt(req.params.id);
+  data.collections = data.collections.filter(c => c.project_id !== pid);
+  data.documents = data.documents.filter(d => d.collection_id && !data.collections.find(c => c.id === d.collection_id));
+  data.projects = data.projects.filter(p => p.id !== pid);
+  saveData();
+  res.json({ ok: true });
 });
 
-// ==================== КОЛЛЕКЦИИ ====================
+// Collections
 app.get('/api/projects/:projectId/collections', (req, res) => {
-  const cols = db.prepare('SELECT * FROM collections WHERE project_id = ?').all(req.params.projectId);
-  res.json(cols);
+  res.json(data.collections.filter(c => c.project_id === parseInt(req.params.projectId)));
 });
 
 app.post('/api/projects/:projectId/collections', (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ error: 'Name required' });
-  const r = db.prepare('INSERT INTO collections (project_id, name) VALUES (?, ?)').run(req.params.projectId, name);
-  res.json({ id: r.lastInsertRowid, name });
+  const c = { id: data.nextId.collection++, project_id: parseInt(req.params.projectId), name: req.body.name, created_at: new Date().toISOString() };
+  data.collections.push(c);
+  saveData();
+  res.json(c);
 });
 
 app.delete('/api/collections/:id', (req, res) => {
-  db.prepare('DELETE FROM collections WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
+  const cid = parseInt(req.params.id);
+  data.documents = data.documents.filter(d => d.collection_id !== cid);
+  data.collections = data.collections.filter(c => c.id !== cid);
+  saveData();
+  res.json({ ok: true });
 });
 
-// ==================== ДОКУМЕНТЫ (ПУБЛИЧНОЕ API) ====================
-// Получить документы коллекции
+// Documents
 app.get('/api/collections/:collectionId/documents', (req, res) => {
-  const docs = db.prepare('SELECT * FROM documents WHERE collection_id = ? ORDER BY id DESC').all(req.params.collectionId);
-  res.json(docs.map(d => ({ id: d.id, ...JSON.parse(d.data), _created: d.created_at, _updated: d.updated_at })));
+  res.json(data.documents.filter(d => d.collection_id === parseInt(req.params.collectionId)));
 });
 
-// Добавить документ
 app.post('/api/collections/:collectionId/documents', (req, res) => {
-  const data = req.body;
-  const r = db.prepare('INSERT INTO documents (collection_id, data) VALUES (?, ?)').run(req.params.collectionId, JSON.stringify(data));
-  res.json({ id: r.lastInsertRowid, ...data });
+  const d = { id: data.nextId.document++, collection_id: parseInt(req.params.collectionId), data: req.body, created_at: new Date().toISOString() };
+  data.documents.push(d);
+  saveData();
+  res.json(d);
 });
 
-// Обновить документ
 app.put('/api/documents/:id', (req, res) => {
-  db.prepare('UPDATE documents SET data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(JSON.stringify(req.body), req.params.id);
-  res.json({ id: parseInt(req.params.id), ...req.body });
+  const d = data.documents.find(d => d.id === parseInt(req.params.id));
+  if (!d) return res.status(404).json({ error: 'Not found' });
+  d.data = req.body;
+  d.updated_at = new Date().toISOString();
+  saveData();
+  res.json(d);
 });
 
-// Удалить документ
 app.delete('/api/documents/:id', (req, res) => {
-  db.prepare('DELETE FROM documents WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
-});
-
-// ==================== ПУБЛИЧНОЕ API (КАК FIREBASE) ====================
-app.get('/api/public/:collectionId', (req, res) => {
-  const docs = db.prepare('SELECT * FROM documents WHERE collection_id = ? ORDER BY id DESC').all(req.params.collectionId);
-  res.json(docs.map(d => ({ id: d.id, ...JSON.parse(d.data) })));
-});
-
-app.post('/api/public/:collectionId', (req, res) => {
-  const r = db.prepare('INSERT INTO documents (collection_id, data) VALUES (?, ?)').run(req.params.collectionId, JSON.stringify(req.body));
-  res.json({ id: r.lastInsertRowid, ...req.body });
+  data.documents = data.documents.filter(d => d.id !== parseInt(req.params.id));
+  saveData();
+  res.json({ ok: true });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('Firebase Clone: http://localhost:' + PORT);
-});
+app.listen(PORT, '0.0.0.0', () => console.log('Server on port ' + PORT));

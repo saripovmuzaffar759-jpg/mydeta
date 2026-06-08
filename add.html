@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить проект в базу</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #334155;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: #a78bfa;
+        }
+        p {
+            color: #94a3b8;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #cbd5e1;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139,92,246,0.2);
+        }
+        select {
+            cursor: pointer;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .status.success {
+            display: block;
+            background: rgba(34,197,94,0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34,197,94,0.3);
+        }
+        .status.error {
+            display: block;
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0f172a;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+        .preview h3 {
+            color: #a78bfa;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+        .preview code {
+            color: #4ade80;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Добавить проект</h1>
+        <p>Заполни форму и проект появится в браузере Muzaffar Pro</p>
+        
+        <form id="projectForm">
+            <label>Название проекта *</label>
+            <input type="text" id="name" placeholder="Например: HTML Редактор" required>
+            
+            <label>Ссылка (URL) *</label>
+            <input type="url" id="url" placeholder="https://..." required>
+            
+            <label>Категория</label>
+            <select id="category">
+                <option>⭐ Главные</option>
+                <option>💸 Платежи</option>
+                <option>🚚 Доставка</option>
+                <option>🛍️ Торговля</option>
+                <option>👤 Профиль</option>
+                <option>💰 Кошелёк</option>
+                <option>📈 Акции</option>
+                <option>💱 Обмен</option>
+                <option>🤖 AI</option>
+                <option>🛠️ Инструменты</option>
+                <option>🎮 Игры</option>
+                <option>🎬 Медиа</option>
+                <option>🎨 Творчество</option>
+                <option>📚 Образование</option>
+                <option>📞 Связь</option>
+                <option>🚕 Сервисы</option>
+                <option>📱 Соцсети</option>
+                <option>🧭 Навигация</option>
+                <option>📁 Другое</option>
+            </select>
+            
+            <label>Иконка (эмодзи)</label>
+            <input type="text" id="icon" placeholder="📄" value="📄" maxlength="2">
+            
+            <label>Описание</label>
+            <textarea id="description" rows="2" placeholder="Краткое описание проекта..."></textarea>
+            
+            <button type="submit" id="submitBtn">✅ Добавить в базу</button>
+        </form>
+        
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        const API = 'https://mydeta.onrender.com/api/collections/1/documents';
+
+        document.getElementById('projectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('status');
+            
+            const name = document.getElementById('name').value.trim();
+            const url = document.getElementById('url').value.trim();
+            const category = document.getElementById('category').value;
+            const icon = document.getElementById('icon').value.trim() || '📄';
+            const description = document.getElementById('description').value.trim();
+            
+            if (!name || !url) {
+                status.className = 'status error';
+                status.textContent = '❌ Название и ссылка обязательны!';
+                return;
+            }
+            
+            if (!url.startsWith('http')) {
+                status.className = 'status error';
+                status.textContent = '❌ Ссылка должна начинаться с http:// или https://';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Добавляю...';
+            status.className = 'status';
+            
+            try {
+                const res = await fetch(API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        название: name,
+                        url: url,
+                        категория: category,
+                        иконка: icon,
+                        описание: description,
+                        html: url
+                    })
+                });
+                
+                if (res.ok) {
+                    status.className = 'status success';
+                    status.textContent = '✅ Проект успешно добавлен в базу!';
+                    document.getElementById('projectForm').reset();
+                    document.getElementById('icon').value = '📄';
+                } else {
+                    throw new Error('Ошибка сервера');
+                }
+            } catch (err) {
+                status.className = 'status error';
+                status.textContent = '❌ Ошибка: ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✅ Добавить в базу';
+            }
+        });
+    </script>
+</body>
+</html>

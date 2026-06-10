@@ -41,7 +41,7 @@ app.post('/api/projects', (req, res) => {
 app.delete('/api/projects/:id', (req, res) => {
   const pid = parseInt(req.params.id);
   data.collections = data.collections.filter(c => c.project_id !== pid);
-  data.documents = data.documents.filter(d => d.collection_id && !data.collections.find(c => c.id === d.collection_id));
+  data.documents = data.documents.filter(d => !data.collections.find(c => c.id === d.collection_id));
   data.projects = data.projects.filter(p => p.id !== pid);
   saveData();
   res.json({ ok: true });

@@ -1,330 +1,95 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Clone</title>
+    <title>Мои проекты</title>
     <style>
-        :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --border: #334155;
-            --primary: #3b82f6;
-            --green: #22c55e;
-            --red: #ef4444;
-            --text: #e2e8f0;
-            --text2: #94a3b8;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; }
-        
-        .sidebar { width: 300px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
-        .sidebar-header h2 { font-size: 16px; color: var(--primary); margin-bottom: 12px; }
-        .sidebar-header input { width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; outline: none; }
-        .sidebar-header input:focus { border-color: var(--primary); }
-        .sidebar-header button { width: 100%; padding: 10px; margin-top: 8px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
-        .sidebar-header button:hover { opacity: 0.9; }
-        .project-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .project-item { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; transition: all 0.15s; }
-        .project-item:hover { background: var(--border); }
-        .project-item.active { background: var(--primary); }
-        .project-item .actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
-        .project-item:hover .actions { opacity: 1; }
-        .project-item .actions button { background: none; border: none; color: var(--text); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-        .project-item .actions button:hover { background: rgba(255,255,255,0.2); }
-        .project-item.active .actions button { color: white; }
-        
-        .main { flex: 1; padding: 30px; overflow-y: auto; }
-        .main h2 { font-size: 20px; margin-bottom: 20px; }
-        .breadcrumb { color: var(--text2); margin-bottom: 20px; font-size: 13px; }
-        .breadcrumb span { cursor: pointer; color: var(--primary); }
-        .breadcrumb span:hover { text-decoration: underline; }
-        
-        .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
-        .card:hover { border-color: var(--primary); }
-        .card .icon { font-size: 24px; }
-        .card .name { flex: 1; font-size: 14px; }
-        .card .del { background: none; border: none; color: var(--red); cursor: pointer; padding: 4px 8px; border-radius: 4px; }
-        .card .del:hover { background: rgba(239,68,68,0.2); }
-        .card.add-card { border: 2px dashed var(--border); justify-content: center; color: var(--text2); }
-        .card.add-card:hover { border-color: var(--primary); color: var(--primary); }
-        
-        .api-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .api-section h3 { font-size: 14px; color: var(--primary); margin-bottom: 8px; }
-        .api-section code { display: block; background: #0f172a; padding: 12px; border-radius: 8px; font-size: 12px; color: #22c55e; margin: 5px 0; word-break: break-all; }
-        .api-section .copy-btn { background: var(--primary); color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-left: 8px; }
-        
-        table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
-        th { background: var(--bg); padding: 12px 16px; text-align: left; font-size: 12px; text-transform: uppercase; color: var(--text2); letter-spacing: 0.5px; }
-        td { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        tr:hover td { background: rgba(59,130,246,0.05); }
-        
-        .btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-green { background: var(--green); color: white; padding: 8px 16px; margin-bottom: 15px; }
-        .btn-red { background: var(--red); color: white; }
-        
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; }
-        .modal.show { display: flex; }
-        .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 460px; max-height: 80vh; overflow-y: auto; }
-        .modal-box h3 { margin-bottom: 16px; }
-        .modal-box input { width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); margin-bottom: 8px; font-size: 13px; outline: none; }
-        .modal-box input:focus { border-color: var(--primary); }
-        .field-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-        .field-row input { flex: 1; margin-bottom: 0; }
-        .field-row button { background: var(--red); color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; }
-        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-        .modal-actions button { padding: 8px 16px; border-radius: 8px; cursor: pointer; border: none; font-size: 13px; font-weight: 600; }
-        .empty { text-align: center; padding: 60px; color: var(--text2); }
-        pre { background: var(--bg); padding: 8px; border-radius: 6px; font-size: 12px; max-width: 300px; overflow-x: auto; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#0f172a;color:#e2e8f0;font-family:Arial;min-height:100vh;padding:20px}
+        .container{max-width:1000px;margin:0 auto}
+        h1{text-align:center;color:#a78bfa;margin-bottom:20px}
+        .add-btn{display:block;margin:0 auto 20px;padding:12px 30px;background:#22c55e;color:white;border:none;border-radius:10px;cursor:pointer;font-size:16px}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px}
+        .card{background:#1e293b;border-radius:12px;padding:20px;cursor:pointer;transition:.2s;border:1px solid #334155;text-decoration:none;color:#e2e8f0;display:block}
+        .card:hover{border-color:#8b5cf6;transform:translateY(-2px)}
+        .card .icon{font-size:30px;margin-bottom:8px}
+        .card .name{font-size:16px;font-weight:600;margin-bottom:5px}
+        .card .cat{font-size:12px;color:#94a3b8;background:#0f172a;display:inline-block;padding:3px 10px;border-radius:20px}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;align-items:center;justify-content:center}
+        .modal.show{display:flex}
+        .modal-box{background:#1e293b;padding:25px;border-radius:16px;width:400px}
+        .modal-box h2{margin-bottom:15px;color:#a78bfa}
+        .modal-box input,.modal-box select{width:100%;padding:10px;margin-bottom:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:white}
+        .modal-box button{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600}
+        .btn-save{background:#22c55e;color:white}
+        .btn-cancel{background:#ef4444;color:white}
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2>🔥 Firebase Clone</h2>
-            <input type="text" id="projectName" placeholder="Название проекта" onkeydown="if(event.key==='Enter')createProject()">
-            <button onclick="createProject()">+ Создать проект</button>
-        </div>
-        <div class="project-list" id="projectsList"></div>
+<div class="container">
+    <h1>📁 Мои проекты</h1>
+    <button class="add-btn" onclick="showForm()">+ Добавить проект</button>
+    <div class="grid" id="grid">Загрузка...</div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <h2>Добавить проект</h2>
+        <input type="text" id="name" placeholder="Название">
+        <input type="url" id="url" placeholder="Ссылка (https://...)">
+        <input type="text" id="icon" placeholder="Иконка (эмодзи)" value="📄">
+        <select id="category">
+            <option>⭐ Главные</option><option>🤖 AI</option><option>🛠️ Инструменты</option><option>🎮 Игры</option><option>🎬 Медиа</option><option>📞 Связь</option><option>📱 Соцсети</option><option>📁 Другое</option>
+        </select>
+        <button class="btn-save" onclick="addProject()">✅ Сохранить</button>
+        <button class="btn-cancel" onclick="closeModal()">❌ Отмена</button>
     </div>
+</div>
+
+<script>
+const API = '/api/collections/1/documents';
+
+async function load() {
+    try {
+        const res = await fetch(API);
+        const docs = await res.json();
+        const grid = document.getElementById('grid');
+        if(!docs.length) { grid.innerHTML = '<p style="text-align:center;color:#94a3b8;">Нет проектов</p>'; return; }
+        grid.innerHTML = docs.map(d => {
+            const data = d.data || {};
+            return `<a class="card" href="${data.url||'#'}" target="_blank">
+                <div class="icon">${data.иконка||'📄'}</div>
+                <div class="name">${data.название||'Без названия'}</div>
+                <span class="cat">${data.категория||'📁 Другое'}</span>
+            </a>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('grid').innerHTML = '<p style="text-align:center;color:#f87171;">Ошибка загрузки</p>';
+    }
+}
+
+function showForm() { document.getElementById('modal').classList.add('show'); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+async function addProject() {
+    const название = document.getElementById('name').value.trim();
+    const url = document.getElementById('url').value.trim();
+    const иконка = document.getElementById('icon').value.trim() || '📄';
+    const категория = document.getElementById('category').value;
+    if(!название||!url) return alert('Заполни название и ссылку');
     
-    <div class="main" id="mainContent">
-        <div class="empty">← Выбери проект слева</div>
-    </div>
-    
-    <div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
+    await fetch(API, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({название,url,иконка,категория})
+    });
+    closeModal();
+    load();
+}
 
-    <script>
-        const API = '/api';
-        let state = { project: null, collection: null };
-
-        async function loadProjects() {
-            const projects = await fetch(API + '/projects').then(r => r.json());
-            document.getElementById('projectsList').innerHTML = projects.map(p => `
-                <div class="project-item ${state.project?.id === p.id ? 'active' : ''}" onclick="openProject(${p.id}, '${p.name.replace(/'/g,"\\'")}', '${p.api_key}')">
-                    📁 ${p.name}
-                    <div class="actions">
-                        <button onclick="event.stopPropagation();copyKey('${p.api_key}')" title="Копировать API ключ">🔑</button>
-                        <button onclick="event.stopPropagation();deleteProject(${p.id})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function createProject() {
-            const name = document.getElementById('projectName').value.trim();
-            if (!name) return alert('Введи название');
-            await fetch(API + '/projects', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name })
-            });
-            document.getElementById('projectName').value = '';
-            loadProjects();
-        }
-
-        async function deleteProject(id) {
-            if (!confirm('Удалить проект и всё содержимое?')) return;
-            await fetch(API + '/projects/' + id, { method: 'DELETE' });
-            if (state.project?.id === id) {
-                state = { project: null, collection: null };
-                document.getElementById('mainContent').innerHTML = '<div class="empty">← Выбери проект</div>';
-            }
-            loadProjects();
-        }
-
-        function copyKey(key) {
-            navigator.clipboard.writeText(key);
-            alert('API ключ скопирован!');
-        }
-
-        async function openProject(id, name, apiKey) {
-            state = { project: { id, name, apiKey }, collection: null };
-            loadProjects();
-            
-            const cols = await fetch(API + '/projects/' + id + '/collections').then(r => r.json());
-            
-            document.getElementById('mainContent').innerHTML = `
-                <h2>📁 ${name}</h2>
-                
-                <div class="api-section">
-                    <h3>🔑 API доступ</h3>
-                    <p style="font-size:13px;color:var(--text2);margin-bottom:8px;">API ключ проекта:</p>
-                    <code>${apiKey} <button class="copy-btn" onclick="navigator.clipboard.writeText('${apiKey}')">Копировать</button></code>
-                    <p style="font-size:13px;color:var(--text2);margin-top:8px;">Пример использования:</p>
-                    <code>fetch('https://твой-сервер.onrender.com/api/collections/ID_КОЛЛЕКЦИИ/documents')</code>
-                </div>
-                
-                <h3 style="margin-bottom:12px;">Коллекции</h3>
-                <div class="cards">
-                    ${cols.map(c => `
-                        <div class="card" onclick="openCollection(${c.id}, '${c.name.replace(/'/g,"\\'")}')">
-                            <span class="icon">📄</span>
-                            <span class="name">${c.name}</span>
-                            <button class="del" onclick="event.stopPropagation();deleteCollection(${c.id})">🗑️</button>
-                        </div>
-                    `).join('')}
-                    <div class="card add-card" onclick="showAddCollection()">
-                        + Новая коллекция
-                    </div>
-                </div>
-            `;
-        }
-
-        function showAddCollection() {
-            document.getElementById('modalBox').innerHTML = `
-                <h3>Новая коллекция</h3>
-                <input type="text" id="colName" placeholder="Название (users, posts, products...)" onkeydown="if(event.key==='Enter')createCollection()">
-                <div class="modal-actions">
-                    <button onclick="closeModal()" style="background:var(--border);color:var(--text)">Отмена</button>
-                    <button onclick="createCollection()" style="background:var(--primary);color:white">Создать</button>
-                </div>
-            `;
-            document.getElementById('modal').classList.add('show');
-            setTimeout(() => document.getElementById('colName').focus(), 100);
-        }
-
-        async function createCollection() {
-            const name = document.getElementById('colName').value.trim();
-            if (!name) return;
-            await fetch(API + '/projects/' + state.project.id + '/collections', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name })
-            });
-            closeModal();
-            openProject(state.project.id, state.project.name, state.project.apiKey);
-        }
-
-        async function deleteCollection(id) {
-            if (!confirm('Удалить коллекцию?')) return;
-            await fetch(API + '/collections/' + id, { method: 'DELETE' });
-            openProject(state.project.id, state.project.name, state.project.apiKey);
-        }
-
-        async function openCollection(id, name) {
-            state.collection = { id, name };
-            const docs = await fetch(API + '/collections/' + id + '/documents').then(r => r.json());
-            const keys = docs.length > 0 ? Object.keys(docs[0]).filter(k => k !== 'id' && k !== '_created' && k !== '_updated') : [];
-            
-            document.getElementById('mainContent').innerHTML = `
-                <div class="breadcrumb">
-                    <span onclick="openProject(${state.project.id}, '${state.project.name.replace(/'/g,"\\'")}', '${state.project.apiKey}')">📁 ${state.project.name}</span>
-                    → 📄 ${name}
-                </div>
-                
-                <div class="api-section">
-                    <h3>🔌 API для этой коллекции</h3>
-                    <code>GET  /api/collections/${id}/documents  ← получить все документы</code>
-                    <code>POST /api/collections/${id}/documents  ← добавить документ (JSON)</code>
-                    <code>PUT  /api/documents/:id             ← обновить документ</code>
-                    <code>DELETE /api/documents/:id           ← удалить документ</code>
-                </div>
-                
-                <h3>Документы <span style="font-size:13px;color:var(--text2)">(${docs.length})</span></h3>
-                <button class="btn btn-green" onclick="showAddDoc()" style="margin-top:10px;">+ Добавить документ</button>
-                
-                ${docs.length === 0 ? '<div class="empty">Нет документов</div>' : `
-                    <table style="margin-top:10px;">
-                        <thead><tr><th>ID</th>${keys.map(k => `<th>${k}</th>`).join('')}<th width="100"></th></tr></thead>
-                        <tbody>
-                            ${docs.map(d => `
-                                <tr>
-                                    <td style="color:var(--primary)">#${d.id}</td>
-                                    ${keys.map(k => `<td><pre>${d[k] || '—'}</pre></td>`).join('')}
-                                    <td>
-                                        <button class="btn btn-primary" onclick="editDoc(${d.id}, '${encodeURIComponent(JSON.stringify(d))}')">✏️</button>
-                                        <button class="btn btn-red" onclick="deleteDoc(${d.id})">🗑️</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `}
-            `;
-        }
-
-        function showAddDoc() {
-            document.getElementById('modalBox').innerHTML = `
-                <h3>Новый документ</h3>
-                <div id="docFields">
-                    <div class="field-row">
-                        <input type="text" placeholder="Ключ" class="docKey">
-                        <input type="text" placeholder="Значение" class="docVal">
-                    </div>
-                </div>
-                <button onclick="addField()" style="background:var(--border);color:var(--text);border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-bottom:12px;">+ Добавить поле</button>
-                <div class="modal-actions">
-                    <button onclick="closeModal()" style="background:var(--border);color:var(--text)">Отмена</button>
-                    <button onclick="saveDoc()" style="background:var(--primary);color:white">Сохранить</button>
-                </div>
-            `;
-            document.getElementById('modal').classList.add('show');
-        }
-
-        function addField() {
-            const div = document.createElement('div');
-            div.className = 'field-row';
-            div.innerHTML = '<input type="text" placeholder="Ключ" class="docKey"><input type="text" placeholder="Значение" class="docVal"><button onclick="this.parentElement.remove()">✕</button>';
-            document.getElementById('docFields').appendChild(div);
-        }
-
-        async function saveDoc() {
-            const keys = document.querySelectorAll('.docKey');
-            const vals = document.querySelectorAll('.docVal');
-            const data = {};
-            keys.forEach((k, i) => { if (k.value.trim()) data[k.value.trim()] = vals[i].value; });
-            if (Object.keys(data).length === 0) return alert('Добавьте хотя бы одно поле');
-            await fetch(API + '/collections/' + state.collection.id + '/documents', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            closeModal();
-            openCollection(state.collection.id, state.collection.name);
-        }
-
-        function editDoc(id, dataStr) {
-            const data = JSON.parse(decodeURIComponent(dataStr));
-            const fields = Object.entries(data).filter(([k]) => k !== 'id' && k !== '_created' && k !== '_updated');
-            let html = `<h3>Редактировать #${id}</h3><div id="docFields">`;
-            fields.forEach(([k, v]) => {
-                html += `<div class="field-row"><input type="text" value="${k}" class="docKey"><input type="text" value="${v || ''}" class="docVal"><button onclick="this.parentElement.remove()">✕</button></div>`;
-            });
-            html += '</div><button onclick="addField()" style="background:var(--border);color:var(--text);border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-bottom:12px;">+ Поле</button>';
-            html += `<div class="modal-actions"><button onclick="closeModal()" style="background:var(--border);color:var(--text)">Отмена</button><button onclick="updateDoc(${id})" style="background:var(--primary);color:white">Обновить</button></div>`;
-            document.getElementById('modalBox').innerHTML = html;
-            document.getElementById('modal').classList.add('show');
-        }
-
-        async function updateDoc(id) {
-            const keys = document.querySelectorAll('.docKey');
-            const vals = document.querySelectorAll('.docVal');
-            const data = {};
-            keys.forEach((k, i) => { if (k.value.trim()) data[k.value.trim()] = vals[i].value; });
-            await fetch(API + '/documents/' + id, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            closeModal();
-            openCollection(state.collection.id, state.collection.name);
-        }
-
-        async function deleteDoc(id) {
-            if (!confirm('Удалить документ?')) return;
-            await fetch(API + '/documents/' + id, { method: 'DELETE' });
-            openCollection(state.collection.id, state.collection.name);
-        }
-
-        function closeModal() {
-            document.getElementById('modal').classList.remove('show');
-        }
-
-        loadProjects();
-    </script>
+load();
+</script>
 </body>
 </html>

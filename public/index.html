@@ -1,95 +1,286 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои проекты</title>
+    <title>Админ-панель проектов</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#0f172a;color:#e2e8f0;font-family:Arial;min-height:100vh;padding:20px}
-        .container{max-width:1000px;margin:0 auto}
-        h1{text-align:center;color:#a78bfa;margin-bottom:20px}
-        .add-btn{display:block;margin:0 auto 20px;padding:12px 30px;background:#22c55e;color:white;border:none;border-radius:10px;cursor:pointer;font-size:16px}
-        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px}
-        .card{background:#1e293b;border-radius:12px;padding:20px;cursor:pointer;transition:.2s;border:1px solid #334155;text-decoration:none;color:#e2e8f0;display:block}
-        .card:hover{border-color:#8b5cf6;transform:translateY(-2px)}
-        .card .icon{font-size:30px;margin-bottom:8px}
-        .card .name{font-size:16px;font-weight:600;margin-bottom:5px}
-        .card .cat{font-size:12px;color:#94a3b8;background:#0f172a;display:inline-block;padding:3px 10px;border-radius:20px}
-        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;align-items:center;justify-content:center}
-        .modal.show{display:flex}
-        .modal-box{background:#1e293b;padding:25px;border-radius:16px;width:400px}
-        .modal-box h2{margin-bottom:15px;color:#a78bfa}
-        .modal-box input,.modal-box select{width:100%;padding:10px;margin-bottom:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:white}
-        .modal-box button{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600}
-        .btn-save{background:#22c55e;color:white}
-        .btn-cancel{background:#ef4444;color:white}
+        body{background:#0f172a;color:#e2e8f0;font-family:Arial;min-height:100vh}
+        .tabs{display:flex;gap:0;background:#1e293b}
+        .tab-btn{padding:15px 30px;cursor:pointer;border:none;background:transparent;color:#94a3b8;font-size:14px;border-bottom:2px solid transparent}
+        .tab-btn.active{color:#a78bfa;border-bottom-color:#8b5cf6}
+        .tab-content{display:none;padding:20px;max-width:1100px;margin:0 auto}
+        .tab-content.active{display:block}
+        textarea{width:100%;height:300px;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:10px;padding:15px;font-family:monospace;font-size:13px;margin-bottom:10px}
+        button{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin:5px}
+        .btn-green{background:#22c55e;color:white}
+        .btn-red{background:#ef4444;color:white}
+        .btn-blue{background:#3b82f6;color:white}
+        .btn-purple{background:#8b5cf6;color:white}
+        table{width:100%;border-collapse:collapse;background:#1e293b;border-radius:10px;overflow:hidden;margin-top:15px}
+        th{background:#8b5cf6;padding:10px;text-align:left;font-size:12px}
+        td{padding:8px 10px;border-bottom:1px solid #334155;font-size:13px}
+        tr:hover{background:#28334a}
+        .badge{background:#334155;padding:3px 8px;border-radius:10px;font-size:11px}
+        input,select{width:100%;padding:8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:white;margin-bottom:8px}
+        .card{background:#1e293b;padding:15px;border-radius:10px;margin-bottom:10px}
+        .msg{padding:10px;border-radius:8px;margin:10px 0;display:none}
+        .msg.success{background:rgba(34,197,94,0.2);color:#4ade80;display:block}
+        .msg.error{background:rgba(239,68,68,0.2);color:#f87171;display:block}
+        .count{font-size:12px;color:#94a3b8;margin-bottom:10px}
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>📁 Мои проекты</h1>
-    <button class="add-btn" onclick="showForm()">+ Добавить проект</button>
-    <div class="grid" id="grid">Загрузка...</div>
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('add')">📥 Массовая загрузка</button>
+    <button class="tab-btn" onclick="switchTab('list')">📋 Все проекты</button>
+    <button class="tab-btn" onclick="switchTab('edit')">✏️ Редактировать</button>
+    <button class="tab-btn" onclick="switchTab('single')">➕ Добавить один</button>
 </div>
 
-<div class="modal" id="modal">
-    <div class="modal-box">
-        <h2>Добавить проект</h2>
-        <input type="text" id="name" placeholder="Название">
-        <input type="url" id="url" placeholder="Ссылка (https://...)">
-        <input type="text" id="icon" placeholder="Иконка (эмодзи)" value="📄">
-        <select id="category">
+<!-- МАССОВАЯ ЗАГРУЗКА -->
+<div class="tab-content active" id="tab-add">
+    <div style="max-width:1100px;margin:0 auto;padding:20px;">
+        <h2>📥 Загрузить проекты кодом</h2>
+        <p style="color:#94a3b8;margin-bottom:10px;">Вставь JSON массив проектов:</p>
+        <textarea id="jsonInput" placeholder='[
+  {"название":"Google","url":"https://google.com","категория":"⭐ Главные","иконка":"🔍"},
+  {"название":"YouTube","url":"https://youtube.com","категория":"🎬 Медиа","иконка":"▶️"},
+  {"название":"GitHub","url":"https://github.com","категория":"🛠️ Инструменты","иконка":"🐙"}
+]'></textarea>
+        <button class="btn-green" onclick="massUpload()">🚀 Загрузить все</button>
+        <button class="btn-purple" onclick="fillExample()">📝 Вставить пример 80 проектов</button>
+        <button class="btn-red" onclick="clearAll()">🗑️ Удалить ВСЕ проекты</button>
+        <div class="msg" id="msg-add"></div>
+    </div>
+</div>
+
+<!-- СПИСОК ВСЕХ ПРОЕКТОВ -->
+<div class="tab-content" id="tab-list">
+    <h2>📋 Все проекты (<span id="totalCount">0</span>)</h2>
+    <div class="msg" id="msg-list"></div>
+    <table id="projectsTable">
+        <thead><tr><th>ID</th><th>Иконка</th><th>Название</th><th>URL</th><th>Категория</th><th>Действия</th></tr></thead>
+        <tbody><tr><td colspan="6">Загрузка...</td></tr></tbody>
+    </table>
+</div>
+
+<!-- РЕДАКТИРОВАТЬ -->
+<div class="tab-content" id="tab-edit">
+    <h2>✏️ Редактировать проект</h2>
+    <div class="card">
+        <input type="number" id="editId" placeholder="ID проекта">
+        <button class="btn-blue" onclick="loadProject()">🔍 Найти</button>
+    </div>
+    <div class="card" id="editForm" style="display:none;">
+        <input type="text" id="editName" placeholder="Название">
+        <input type="url" id="editUrl" placeholder="URL">
+        <input type="text" id="editIcon" placeholder="Иконка">
+        <select id="editCategory">
             <option>⭐ Главные</option><option>🤖 AI</option><option>🛠️ Инструменты</option><option>🎮 Игры</option><option>🎬 Медиа</option><option>📞 Связь</option><option>📱 Соцсети</option><option>📁 Другое</option>
         </select>
-        <button class="btn-save" onclick="addProject()">✅ Сохранить</button>
-        <button class="btn-cancel" onclick="closeModal()">❌ Отмена</button>
+        <button class="btn-green" onclick="updateProject()">💾 Сохранить</button>
+        <button class="btn-red" onclick="deleteProjectById()">🗑️ Удалить</button>
     </div>
+    <div class="msg" id="msg-edit"></div>
+</div>
+
+<!-- ДОБАВИТЬ ОДИН -->
+<div class="tab-content" id="tab-single">
+    <h2>➕ Добавить один проект</h2>
+    <div class="card">
+        <input type="text" id="sName" placeholder="Название">
+        <input type="url" id="sUrl" placeholder="URL">
+        <input type="text" id="sIcon" placeholder="Иконка" value="📄">
+        <select id="sCategory">
+            <option>⭐ Главные</option><option>🤖 AI</option><option>🛠️ Инструменты</option><option>🎮 Игры</option><option>🎬 Медиа</option><option>📞 Связь</option><option>📱 Соцсети</option><option>📁 Другое</option>
+        </select>
+        <button class="btn-green" onclick="addSingle()">✅ Добавить</button>
+    </div>
+    <div class="msg" id="msg-single"></div>
 </div>
 
 <script>
 const API = '/api/collections/1/documents';
+let allDocs = [];
 
-async function load() {
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add('active');
+    document.getElementById(`tab-${name}`).classList.add('active');
+    if(name === 'list') loadList();
+}
+
+function msg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text; el.className = `msg ${type}`;
+    setTimeout(() => el.className = 'msg', 3000);
+}
+
+// ==================== ЗАГРУЗКА СПИСКА ====================
+async function loadList() {
     try {
         const res = await fetch(API);
-        const docs = await res.json();
-        const grid = document.getElementById('grid');
-        if(!docs.length) { grid.innerHTML = '<p style="text-align:center;color:#94a3b8;">Нет проектов</p>'; return; }
-        grid.innerHTML = docs.map(d => {
+        allDocs = await res.json();
+        document.getElementById('totalCount').textContent = allDocs.length;
+        const tbody = document.querySelector('#projectsTable tbody');
+        if(!allDocs.length) { tbody.innerHTML = '<tr><td colspan="6">Нет проектов</td></tr>'; return; }
+        tbody.innerHTML = allDocs.map(d => {
             const data = d.data || {};
-            return `<a class="card" href="${data.url||'#'}" target="_blank">
-                <div class="icon">${data.иконка||'📄'}</div>
-                <div class="name">${data.название||'Без названия'}</div>
-                <span class="cat">${data.категория||'📁 Другое'}</span>
-            </a>`;
+            return `<tr>
+                <td>#${d.id}</td>
+                <td>${data.иконка||'📄'}</td>
+                <td>${data.название||'—'}</td>
+                <td><a href="${data.url}" target="_blank" style="color:#8b5cf6;">${(data.url||'').slice(0,40)}...</a></td>
+                <td><span class="badge">${data.категория||'📁'}</span></td>
+                <td>
+                    <button class="btn-blue" onclick="editById(${d.id})" style="padding:4px 10px;font-size:11px;">✏️</button>
+                    <button class="btn-red" onclick="deleteById(${d.id})" style="padding:4px 10px;font-size:11px;">🗑️</button>
+                </td>
+            </tr>`;
         }).join('');
     } catch(e) {
-        document.getElementById('grid').innerHTML = '<p style="text-align:center;color:#f87171;">Ошибка загрузки</p>';
+        msg('msg-list', 'Ошибка загрузки', 'error');
     }
 }
 
-function showForm() { document.getElementById('modal').classList.add('show'); }
-function closeModal() { document.getElementById('modal').classList.remove('show'); }
+// ==================== МАССОВАЯ ЗАГРУЗКА ====================
+async function massUpload() {
+    try {
+        const projects = JSON.parse(document.getElementById('jsonInput').value);
+        if(!Array.isArray(projects)) return msg('msg-add', 'Должен быть массив []', 'error');
+        
+        let count = 0;
+        for(const p of projects) {
+            await fetch(API, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    название: p.название||p.name||'',
+                    url: p.url||'',
+                    категория: p.категория||p.category||'📁 Другое',
+                    иконка: p.иконка||p.icon||'📄'
+                })
+            });
+            count++;
+        }
+        msg('msg-add', `✅ Загружено ${count} проектов!`, 'success');
+    } catch(e) {
+        msg('msg-add', '❌ Ошибка: ' + e.message, 'error');
+    }
+}
 
-async function addProject() {
-    const название = document.getElementById('name').value.trim();
-    const url = document.getElementById('url').value.trim();
-    const иконка = document.getElementById('icon').value.trim() || '📄';
-    const категория = document.getElementById('category').value;
-    if(!название||!url) return alert('Заполни название и ссылку');
+async function clearAll() {
+    if(!confirm('Точно удалить ВСЕ проекты?')) return;
+    await loadList();
+    for(const d of allDocs) {
+        await fetch(`/api/documents/${d.id}`, {method:'DELETE'});
+    }
+    msg('msg-add', '✅ Все проекты удалены', 'success');
+    loadList();
+}
+
+// ==================== ОДИН ПРОЕКТ ====================
+async function addSingle() {
+    const название = document.getElementById('sName').value.trim();
+    const url = document.getElementById('sUrl').value.trim();
+    const иконка = document.getElementById('sIcon').value.trim()||'📄';
+    const категория = document.getElementById('sCategory').value;
+    if(!название||!url) return msg('msg-single','Заполни название и URL','error');
     
-    await fetch(API, {
+    const res = await fetch(API, {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({название,url,иконка,категория})
     });
-    closeModal();
-    load();
+    if(res.ok) {
+        msg('msg-single','✅ Добавлен!','success');
+        document.getElementById('sName').value='';
+        document.getElementById('sUrl').value='';
+    }
 }
 
-load();
+// ==================== РЕДАКТИРОВАНИЕ ====================
+async function loadProject() {
+    const id = document.getElementById('editId').value;
+    if(!id) return;
+    const res = await fetch(`/api/documents/${id}`);
+    if(!res.ok) return msg('msg-edit','Не найден','error');
+    const doc = await res.json();
+    const d = doc.data || {};
+    document.getElementById('editName').value = d.название||'';
+    document.getElementById('editUrl').value = d.url||'';
+    document.getElementById('editIcon').value = d.иконка||'📄';
+    document.getElementById('editCategory').value = d.категория||'📁 Другое';
+    document.getElementById('editForm').style.display = 'block';
+}
+
+async function updateProject() {
+    const id = document.getElementById('editId').value;
+    const название = document.getElementById('editName').value.trim();
+    const url = document.getElementById('editUrl').value.trim();
+    const иконка = document.getElementById('editIcon').value.trim();
+    const категория = document.getElementById('editCategory').value;
+    
+    const res = await fetch(`/api/documents/${id}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({название,url,иконка,категория})
+    });
+    if(res.ok) msg('msg-edit','✅ Обновлено!','success');
+}
+
+async function deleteProjectById() {
+    const id = document.getElementById('editId').value;
+    if(!confirm('Удалить проект #'+id+'?')) return;
+    await fetch(`/api/documents/${id}`, {method:'DELETE'});
+    msg('msg-edit','🗑️ Удалён!','success');
+    document.getElementById('editForm').style.display = 'none';
+}
+
+async function deleteById(id) {
+    if(!confirm('Удалить #'+id+'?')) return;
+    await fetch(`/api/documents/${id}`, {method:'DELETE'});
+    loadList();
+}
+
+function editById(id) {
+    switchTab('edit');
+    document.getElementById('editId').value = id;
+    loadProject();
+}
+
+// ==================== ПРИМЕР 80 ПРОЕКТОВ ====================
+function fillExample() {
+    const projects = [
+        {"название":"Google","url":"https://google.com","категория":"⭐ Главные","иконка":"🔍"},
+        {"название":"YouTube","url":"https://youtube.com","категория":"🎬 Медиа","иконка":"▶️"},
+        {"название":"GitHub","url":"https://github.com","категория":"🛠️ Инструменты","иконка":"🐙"},
+        {"название":"ChatGPT","url":"https://chat.openai.com","категория":"🤖 AI","иконка":"🤖"},
+        {"название":"Telegram","url":"https://web.telegram.org","категория":"📞 Связь","иконка":"✈️"},
+        {"название":"VK","url":"https://vk.com","категория":"📱 Соцсети","иконка":"💙"},
+        {"название":"Instagram","url":"https://instagram.com","категория":"📱 Соцсети","иконка":"📷"},
+        {"название":"Twitter/X","url":"https://x.com","категория":"📱 Соцсети","иконка":"🐦"},
+        {"название":"Discord","url":"https://discord.com","категория":"📞 Связь","иконка":"💬"},
+        {"название":"Gmail","url":"https://mail.google.com","категория":"📞 Связь","иконка":"📧"},
+        {"название":"Google Drive","url":"https://drive.google.com","категория":"📁 Другое","иконка":"📦"},
+        {"название":"Notion","url":"https://notion.so","категория":"🛠️ Инструменты","иконка":"📝"},
+        {"название":"Figma","url":"https://figma.com","категория":"🛠️ Инструменты","иконка":"🎨"},
+        {"название":"Canva","url":"https://canva.com","категория":"🛠️ Инструменты","иконка":"🖼️"},
+        {"название":"TikTok","url":"https://tiktok.com","категория":"🎬 Медиа","иконка":"🎵"},
+        {"название":"Wikipedia","url":"https://wikipedia.org","категория":"📚 Образование","иконка":"📖"},
+        {"название":"YouTube Music","url":"https://music.youtube.com","категория":"🎬 Медиа","иконка":"🎶"},
+        {"название":"Spotify","url":"https://spotify.com","категория":"🎬 Медиа","иконка":"🟢"},
+        {"название":"Twitch","url":"https://twitch.tv","категория":"🎮 Игры","иконка":"🎮"},
+        {"название":"Steam","url":"https://store.steampowered.com","категория":"🎮 Игры","иконка":"🎯"}
+    ];
+    document.getElementById('jsonInput').value = JSON.stringify(projects, null, 2);
+    msg('msg-add', '📝 Вставлен пример 20 проектов. Можешь редактировать и добавлять ещё!', 'success');
+}
+
+loadList();
 </script>
 </body>
 </html>

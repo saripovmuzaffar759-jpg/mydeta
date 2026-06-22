@@ -1,10 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-const crypto = require('crypto');
 
 const app = express();
-app.use(cors());
+
+// Разрешаем запросы только с твоего домена
+app.use(cors({
+  origin: ['https://sharipov.tech', 'http://localhost:3000', 'http://127.0.0.1:3000']
+}));
+
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -17,20 +21,6 @@ function saveData() { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2))
 let data = loadData();
 
 function genKey() { return 'fb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); }
-
-// ========== ЗАЩИТА ДОМЕНА ==========
-app.get('/api/check', (req, res) => {
-    const allowed = ['sharipov.tech', 'localhost', '127.0.0.1', 'mydeta.onrender.com'];
-    const host = req.get('host') || '';
-    const ref = req.get('referer') || '';
-    const ok = allowed.some(d => host.includes(d) || ref.includes(d));
-    if (ok) {
-        const key = crypto.createHash('sha256').update('muzaffar-' + new Date().getHours() + '-secret').digest('hex').substring(0, 16);
-        res.json({ ok: true, key: key });
-    } else {
-        res.status(403).json({ ok: false });
-    }
-});
 
 app.get('/api/projects', (_, res) => res.json(data.projects));
 app.post('/api/projects', (req, res) => {

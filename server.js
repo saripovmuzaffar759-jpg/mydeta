@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 
+// Node.js 18+ имеет встроенный fetch. Если старше — раскомментируй:
+// const fetch = require('node-fetch');
+
 const app = express();
 
 // Разрешаем запросы только с твоего домена
@@ -12,6 +15,55 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('public'));
 
+// ============================================================
+// YANDEX SEARCH API — ПРОКСИ
+// ============================================================
+const YANDEX_API_KEY = process.env.YANDEX_API_KEY || 'AQVN2CnOcV94oFQy2FDlWhY3Dalhk2b9jv7_ZM4Z';
+const YANDEX_FOLDER_ID = process.env.YANDEX_FOLDER_ID || 'b1guf25bik6omqj4u7f5';
+
+app.post('/api/yandex-search', async (req, res) => {
+  const query = (req.body && req.body.query) ? String(req.body.query).trim() : '';
+  if (!query) {
+    return res.status(400).json({ error: 'no query' });
+  }
+
+  try {
+    const r = await fetch('https://searchapi.api.cloud.yandex.net/v2/web/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Api-Key ' + YANDEX_API_KEY
+      },
+      body: JSON.stringify({
+        query: {
+          searchType: 'SEARCH_TYPE_RU',
+          queryText: query,
+          familyMode: 'FAMILY_MODE_MODERATE',
+          page: 0
+        },
+        folderId: YANDEX_FOLDER_ID,
+        responseFormat: 'FORMAT_JSON'
+      })
+    });
+
+    if (!r.ok) {
+      const errText = await r.text();
+      console.warn('Yandex API error:', r.status, errText.substring(0, 300));
+      return res.status(r.status).json({ error: 'yandex failed', status: r.status, details: errText.substring(0, 200) });
+    }
+
+    const result = await r.json();
+    console.log('Yandex OK:', query);
+    res.json(result);
+  } catch (e) {
+    console.error('Yandex proxy error:', e.message);
+    res.status(500).json({ error: 'yandex proxy failed', message: e.message });
+  }
+});
+
+// ============================================================
+// ПРОЕКТЫ (как было)
+// ============================================================
 const DATA_FILE = './data.json';
 function loadData() {
   try { if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch(e) {}

@@ -2,12 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 
-// Node.js 18+ имеет встроенный fetch. Если старше — раскомментируй:
-// const fetch = require('node-fetch');
-
 const app = express();
 
-// Разрешаем запросы только с твоего домена
 app.use(cors({
   origin: ['https://sharipov.tech', 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500']
 }));
@@ -23,9 +19,7 @@ const YANDEX_FOLDER_ID = process.env.YANDEX_FOLDER_ID || 'b1guf25bik6omqj4u7f5';
 
 app.post('/api/yandex-search', async (req, res) => {
   const query = (req.body && req.body.query) ? String(req.body.query).trim() : '';
-  if (!query) {
-    return res.status(400).json({ error: 'no query' });
-  }
+  if (!query) return res.status(400).json({ error: 'no query' });
 
   try {
     const r = await fetch('https://searchapi.api.cloud.yandex.net/v2/web/search', {
@@ -62,7 +56,7 @@ app.post('/api/yandex-search', async (req, res) => {
 });
 
 // ============================================================
-// ПРОЕКТЫ (как было)
+// ПРОЕКТЫ (оставляем как было)
 // ============================================================
 const DATA_FILE = './data.json';
 function loadData() {
